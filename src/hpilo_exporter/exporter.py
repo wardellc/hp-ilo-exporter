@@ -50,7 +50,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                             prometheus_metrics.gauges[gauge].labels(product_name=common_labels['product_name'],
                                                                     server_name=common_labels['server_name']).set(1)
                         else:
-                            prometheus_metrics.gauges[gauge].labels(pproduct_name=common_labels['product_name'],
+                            prometheus_metrics.gauges[gauge].labels(product_name=common_labels['product_name'],
                                                                     server_name=common_labels['server_name']).set(2)
     def get_detailed_disk_info(self, common_labels, storage):
         for controller_label, controller_info in storage.items():
@@ -62,7 +62,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                 prometheus_metrics.gauges['hpilo_hdd_controller_gauge'].labels(product_name=common_labels['product_name'],
                                                         server_name=common_labels['server_name'], controller_label=controller_label).set(1)
             else:
-                prometheus_metrics.gauges['hpilo_hdd_controller_gauge'].labels(pproduct_name=common_labels['product_name'],
+                prometheus_metrics.gauges['hpilo_hdd_controller_gauge'].labels(product_name=common_labels['product_name'],
                                                         server_name=common_labels['server_name'], controller_label=controller_label).set(2)            
 
             for logical_drive in storage[controller_label]['logical_drives']:
@@ -75,7 +75,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                     prometheus_metrics.gauges['hpilo_logical_drive_gauge'].labels(product_name=common_labels['product_name'],
                                                             server_name=common_labels['server_name'], controller_label=controller_label, logical_drive_label=logical_drive_label).set(1)
                 else:
-                    prometheus_metrics.gauges['hpilo_logical_drive_gauge'].labels(pproduct_name=common_labels['product_name'],
+                    prometheus_metrics.gauges['hpilo_logical_drive_gauge'].labels(product_name=common_labels['product_name'],
                                                             server_name=common_labels['server_name'], controller_label=controller_label, logical_drive_label=logical_drive_label).set(2)
 
                 for physical_drive in logical_drive['physical_drives']:
@@ -89,8 +89,30 @@ class RequestHandler(BaseHTTPRequestHandler):
                         prometheus_metrics.gauges['hpilo_physical_drive_gauge'].labels(product_name=common_labels['product_name'],
                                                                 server_name=common_labels['server_name'], controller_label=controller_label, logical_drive_label=logical_drive_label, physical_drive_label=physical_drive_label, location=physical_drive_location).set(0)
                     else:
-                        prometheus_metrics.gauges['hpilo_physical_drive_gauge'].labels(pproduct_name=common_labels['product_name'],
+                        prometheus_metrics.gauges['hpilo_physical_drive_gauge'].labels(product_name=common_labels['product_name'],
                                                                 server_name=common_labels['server_name'], controller_label=controller_label, logical_drive_label=logical_drive_label, physical_drive_label=physical_drive_label, location=physical_drive_location).set(0)
+
+    def get_fans_info(self, common_labels, fans):
+        for _, fan in fans.items():
+            status = fan['status']
+            speed_value = fan['speed'][0]
+            speed_unit = fan['speed'][1]
+            zone = fan['zone']
+            label = fan['label']
+
+            prometheus_metrics.gauges['hpilo_fan_speed_gauge'].labels(product_name=common_labels['product_name'], server_name=common_labels['server_name'],
+                                                                unit=speed_unit, zone=zone, label=label).set(speed_value)
+
+            if status.upper() == 'OK':
+                prometheus_metrics.gauges['hpilo_fan_health_gauge'].labels(product_name=common_labels['product_name'], server_name=common_labels['server_name'],
+                                                                            zone=zone, label=label).set(0)
+            elif status.upper() == 'DEGRADED':
+                prometheus_metrics.gauges['hpilo_fan_health_gauge'].labels(product_name=common_labels['product_name'], server_name=common_labels['server_name'],
+                                                                            zone=zone, label=label).set(1)
+            else:
+                prometheus_metrics.gauges['hpilo_fan_health_gauge'].labels(product_name=common_labels['product_name'], server_name=common_labels['server_name'],
+                                                                            zone=zone, label=label).set(2)
+
 
 
     def do_GET(self):
@@ -123,11 +145,14 @@ class RequestHandler(BaseHTTPRequestHandler):
 
         return_summary = True
         return_disks = True
+        return_fans = True
         if 'config' in query_components:
             if 'no_summary' in query_components['config'][0]:
                 return_summary = False
             if 'no_disks' in query_components['config'][0]:
                 return_disks = False
+            if 'no_fans' in query_components['config'][0]:
+                return_fans = False
 
         if url.path == self.server.endpoint and ilo_host and ilo_user and ilo_password and ilo_port:
 
@@ -174,6 +199,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                     print("Detailed disk information is unavailable.")
                 else:
                     self.get_detailed_disk_info(common_labels, embedded_health['storage'])
+
+            if return_fans:
+                self.get_fans_info(common_labels, embedded_health['fans'])
 
             #for iLO3 patch network
             if ilo.get_fw_version()["management_processor"] == 'iLO3':

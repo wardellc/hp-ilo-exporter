@@ -78,6 +78,28 @@ hpilo_logical_drive_gauge{controller_label="Controller in Slot 2",logical_drive_
 hpilo_physical_drive_gauge{controller_label="Controller in Slot 2",location="Port 2I Box 1 Bay 1",logical_drive_label="01",physical_drive_label="Port 2I Box 1 Bay 1",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain"} 0.0
 ```
 
+### Fan speed and health output example
+
+Example of status of your iLO (shortened)
+```
+"fans": {
+  "Fan 2": {
+    "status": "OK",
+    "speed": [
+      35,
+      "Percentage"
+    ],
+    "zone": "System",
+    "label": "Fan 2"
+}
+```
+
+The returned output would be:
+```
+hpilo_fan_speed_gauge{label="Fan 2",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain",unit="Percentage",zone="System"} 35.0
+hpilo_fan_health_gauge{label="Fan 2",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain",zone="System"} 0.0
+```
+
 ### Installing
 
 You can install exporter on the server directly or on separate machine.
@@ -123,9 +145,9 @@ You can then call the web server on the defined endpoint, `/metrics` by default.
 curl 'http://127.0.0.1:9416/metrics?ilo_host=127.0.0.1&ilo_port=443&ilo_user=admin&ilo_password=admin'
 ```
 
-To not return disk drive health.
+To not return disk drive health and fan info.
 ```
-curl 'http://127.0.0.1:9416/metrics?ilo_host=127.0.0.1&ilo_port=443&ilo_user=admin&ilo_password=admin&config=no_disks'
+curl 'http://127.0.0.1:9416/metrics?ilo_host=127.0.0.1&ilo_port=443&ilo_user=admin&ilo_password=admin&config=no_disks,no_fans'
 ```
 
 Passing argument to the docker run command

@@ -22,6 +22,10 @@ hpilo_hdd_controller_gauge = Gauge('hpilo_hdd_controller_gauge', 'HP iLO HDD Con
 hpilo_logical_drive_gauge = Gauge('hpilo_logical_drive_gauge', 'HP iLO HDD Controller Logical Drives status', ['product_name', 'server_name', 'controller_label', 'logical_drive_label'])
 hpilo_physical_drive_gauge = Gauge('hpilo_physical_drive_gauge', 'HP iLO Physical Drive status', ['product_name', 'server_name', 'controller_label', 'logical_drive_label', 'physical_drive_label', 'location'])
 
+hpilo_fan_speed_gauge = Gauge('hpilo_fan_speed_gauge', 'HP iLO Fan speed', ['product_name', 'server_name', 'unit', 'zone', 'label'])
+hpilo_fan_health_gauge = Gauge('hpilo_fan_health_gauge', 'HP iLO Fan health', ['product_name', 'server_name', 'zone', 'label'])
+      
+
 gauges = {
     'hpilo_vrm_gauge': hpilo_vrm_gauge,
     'hpilo_drive_gauge': hpilo_drive_gauge,
@@ -39,4 +43,6 @@ gauges = {
     'hpilo_hdd_controller_gauge': hpilo_hdd_controller_gauge,
     'hpilo_logical_drive_gauge': hpilo_logical_drive_gauge,
     'hpilo_physical_drive_gauge': hpilo_physical_drive_gauge,
+    'hpilo_fan_speed_gauge': hpilo_fan_speed_gauge,
+    'hpilo_fan_health_gauge': hpilo_fan_health_gauge,
 }
