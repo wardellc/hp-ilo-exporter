@@ -16,6 +16,11 @@ hpilo_processor_gauge = Gauge('hpilo_processor', 'HP iLO processor status', ["pr
 hpilo_network_gauge = Gauge('hpilo_network', 'HP iLO network status', ["product_name", "server_name"])
 hpilo_temperature_gauge = Gauge('hpilo_temperature', 'HP iLO temperature status', ["product_name", "server_name"])
 hpilo_firmware_version = Gauge('hpilo_firmware_version', 'HP iLO firmware version', ["product_name", "server_name"])
+hpilo_nic_status_gauge = Gauge('hpilo_nic_status', 'HP iLO NIC status', ["product_name", "server_name", "nic_name", "ip_address"])
+
+hpilo_hdd_controller_gauge = Gauge('hpilo_hdd_controller_gauge', 'HP iLO HDD Controller status', ['product_name', 'server_name', 'controller_label'])
+hpilo_logical_drive_gauge = Gauge('hpilo_logical_drive_gauge', 'HP iLO HDD Controller Logical Drives status', ['product_name', 'server_name', 'controller_label', 'logical_drive_label'])
+hpilo_physical_drive_gauge = Gauge('hpilo_physical_drive_gauge', 'HP iLO Physical Drive status', ['product_name', 'server_name', 'controller_label', 'logical_drive_label', 'physical_drive_label', 'location'])
 
 gauges = {
     'hpilo_vrm_gauge': hpilo_vrm_gauge,
@@ -30,4 +35,8 @@ gauges = {
     'hpilo_network_gauge': hpilo_network_gauge,
     'hpilo_temperature_gauge': hpilo_temperature_gauge,
     'hpilo_firmware_version': hpilo_firmware_version,
+    'hpilo_nic_status_gauge': hpilo_nic_status_gauge,
+    'hpilo_hdd_controller_gauge': hpilo_hdd_controller_gauge,
+    'hpilo_logical_drive_gauge': hpilo_logical_drive_gauge,
+    'hpilo_physical_drive_gauge': hpilo_physical_drive_gauge,
 }

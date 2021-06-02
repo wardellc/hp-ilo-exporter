@@ -10,7 +10,6 @@ def readme():
     with io.open('README.md', 'r', encoding='utf-8') as f:
         return f.read()
 
-
 setup(
     name=PACKAGE_NAME,
     version=VERSION,
