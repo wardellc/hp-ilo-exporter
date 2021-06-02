@@ -52,6 +52,7 @@ class RequestHandler(BaseHTTPRequestHandler):
                         else:
                             prometheus_metrics.gauges[gauge].labels(product_name=common_labels['product_name'],
                                                                     server_name=common_labels['server_name']).set(2)
+
     def get_detailed_disk_info(self, common_labels, storage):
         for controller_label, controller_info in storage.items():
             status = storage[controller_label]['status']
@@ -113,7 +114,18 @@ class RequestHandler(BaseHTTPRequestHandler):
                 prometheus_metrics.gauges['hpilo_fan_health_gauge'].labels(product_name=common_labels['product_name'], server_name=common_labels['server_name'],
                                                                             zone=zone, label=label).set(2)
 
-
+    def get_temperatures_info(self, common_labels, temperatures):
+        for _, temperature in temperatures.items():
+            if temperature['status'].upper() == 'OK':
+                current_reading = temperature['currentreading'][0]
+                temperature_unit = temperature['currentreading'][1]
+                critical_value = temperature['critical'][0]
+                caution_value = temperature['caution'][0]
+                location = temperature['location']
+                label = temperature['label']
+                
+                prometheus_metrics.gauges['hpilo_temperature_measurement_gauge'].labels(product_name=common_labels['product_name'], server_name=common_labels['server_name'],
+                                                                    unit=temperature_unit, critical_value=critical_value, caution_value=caution_value, location=location, label=label).set(current_reading)
 
     def do_GET(self):
         """
@@ -146,6 +158,7 @@ class RequestHandler(BaseHTTPRequestHandler):
         return_summary = True
         return_disks = True
         return_fans = True
+        return_temperatures = True
         if 'config' in query_components:
             if 'no_summary' in query_components['config'][0]:
                 return_summary = False
@@ -153,6 +166,8 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return_disks = False
             if 'no_fans' in query_components['config'][0]:
                 return_fans = False
+            if 'no_temperatures' in query_components['config'][0]:
+                return_temperatures = False
 
         if url.path == self.server.endpoint and ilo_host and ilo_user and ilo_password and ilo_port:
 
@@ -202,6 +217,9 @@ class RequestHandler(BaseHTTPRequestHandler):
 
             if return_fans:
                 self.get_fans_info(common_labels, embedded_health['fans'])
+
+            if return_temperatures:
+                self.get_temperatures_info(common_labels, embedded_health['temperature'])
 
             #for iLO3 patch network
             if ilo.get_fw_version()["management_processor"] == 'iLO3':
