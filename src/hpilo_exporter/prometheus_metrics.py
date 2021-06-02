@@ -18,9 +18,13 @@ hpilo_temperature_gauge = Gauge('hpilo_temperature', 'HP iLO temperature status'
 hpilo_firmware_version = Gauge('hpilo_firmware_version', 'HP iLO firmware version', ["product_name", "server_name"])
 hpilo_nic_status_gauge = Gauge('hpilo_nic_status', 'HP iLO NIC status', ["product_name", "server_name", "nic_name", "ip_address"])
 
-hpilo_hdd_controller_gauge = Gauge('hpilo_hdd_controller_gauge', 'HP iLO HDD Controller status', ['product_name', 'server_name', 'controller_label'])
-hpilo_logical_drive_gauge = Gauge('hpilo_logical_drive_gauge', 'HP iLO HDD Controller Logical Drives status', ['product_name', 'server_name', 'controller_label', 'logical_drive_label'])
-hpilo_physical_drive_gauge = Gauge('hpilo_physical_drive_gauge', 'HP iLO Physical Drive status', ['product_name', 'server_name', 'controller_label', 'logical_drive_label', 'physical_drive_label', 'location'])
+hpilo_hdd_controller_gauge = Gauge('hpilo_hdd_controller', 'HP iLO HDD Controller status', ['product_name', 'server_name', 'controller_label'])
+hpilo_logical_drive_gauge = Gauge('hpilo_logical_drive', 'HP iLO HDD Controller Logical Drives status', ['product_name', 'server_name', 'controller_label', 'logical_drive_label'])
+hpilo_physical_drive_gauge = Gauge('hpilo_physical_drive', 'HP iLO Physical Drive status', ['product_name', 'server_name', 'controller_label', 'logical_drive_label', 'physical_drive_label', 'location'])
+
+hpilo_fan_speed_gauge = Gauge('hpilo_fan_speed', 'HP iLO Fan speed', ['product_name', 'server_name', 'unit', 'zone', 'label'])
+hpilo_fan_health_gauge = Gauge('hpilo_fan_health', 'HP iLO Fan health', ['product_name', 'server_name', 'zone', 'label'])
+hpilo_temperature_measurement_gauge = Gauge('hpilo_temperature_measurement', 'HP iLO Temperatures', ['product_name', 'server_name', 'unit', 'critical_value', 'caution_value', 'location', 'label'])
 
 gauges = {
     'hpilo_vrm_gauge': hpilo_vrm_gauge,
@@ -39,4 +43,7 @@ gauges = {
     'hpilo_hdd_controller_gauge': hpilo_hdd_controller_gauge,
     'hpilo_logical_drive_gauge': hpilo_logical_drive_gauge,
     'hpilo_physical_drive_gauge': hpilo_physical_drive_gauge,
+    'hpilo_fan_speed_gauge': hpilo_fan_speed_gauge,
+    'hpilo_fan_health_gauge': hpilo_fan_health_gauge,
+    'hpilo_temperature_measurement_gauge': hpilo_temperature_measurement_gauge,
 }

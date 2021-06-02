@@ -73,10 +73,64 @@ Example of status of your iLO (shortened)
 
 The returned output would be:
 ```
-hpilo_hdd_controller_gauge{controller_label="Controller in Slot 2",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain"} 0.0
-hpilo_logical_drive_gauge{controller_label="Controller in Slot 2",logical_drive_label="01",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain"} 0.0
-hpilo_physical_drive_gauge{controller_label="Controller in Slot 2",location="Port 2I Box 1 Bay 1",logical_drive_label="01",physical_drive_label="Port 2I Box 1 Bay 1",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain"} 0.0
+hpilo_hdd_controller{controller_label="Controller in Slot 2",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain"} 0.0
+hpilo_logical_drive{controller_label="Controller in Slot 2",logical_drive_label="01",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain"} 0.0
+hpilo_physical_drive{controller_label="Controller in Slot 2",location="Port 2I Box 1 Bay 1",logical_drive_label="01",physical_drive_label="Port 2I Box 1 Bay 1",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain"} 0.0
 ```
+
+### Fan speed and health output example
+
+Example of status of your iLO (shortened)
+```
+"fans": {
+  "Fan 2": {
+    "status": "OK",
+    "speed": [
+      35,
+      "Percentage"
+    ],
+    "zone": "System",
+    "label": "Fan 2"
+}
+```
+
+The returned output would be:
+```
+hpilo_fan_speed{label="Fan 2",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain",unit="Percentage",zone="System"} 35.0
+hpilo_fan_health{label="Fan 2",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain",zone="System"} 0.0
+```
+
+### Temperature output example
+
+Note: at present only temperature values are returned where 'status' is 'OK'.
+
+Example of status of your iLO (shortened)
+```
+"temperature": {
+"38-PCI 4 Zone": {
+  "status": "OK",
+  "currentreading": [
+    26,
+    "Celsius"
+  ],
+  "label": "38-PCI 4 Zone",
+  "critical": [
+    72,
+    "Celsius"
+  ],
+  "caution": [
+    67,
+    "Celsius"
+  ],
+  "location": "I/O Board"
+}
+```
+
+The returned output would be:
+```
+hpilo_temperature_measurement{caution_value="67",critical_value="72",label="38-PCI 4 Zone",location="I/O Board",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain",unit="Celsius"} 26.0
+```
+
 
 ### Installing
 
@@ -123,9 +177,9 @@ You can then call the web server on the defined endpoint, `/metrics` by default.
 curl 'http://127.0.0.1:9416/metrics?ilo_host=127.0.0.1&ilo_port=443&ilo_user=admin&ilo_password=admin'
 ```
 
-To not return disk drive health.
+To not return disk drive health, temperatures and fan info.
 ```
-curl 'http://127.0.0.1:9416/metrics?ilo_host=127.0.0.1&ilo_port=443&ilo_user=admin&ilo_password=admin&config=no_disks'
+curl 'http://127.0.0.1:9416/metrics?ilo_host=127.0.0.1&ilo_port=443&ilo_user=admin&ilo_password=admin&config=no_disks,no_temperatures,no_fans'
 ```
 
 Passing argument to the docker run command
