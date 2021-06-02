@@ -15,7 +15,6 @@ from prometheus_client import generate_latest, Summary
 from urlparse import parse_qs
 from urlparse import urlparse
 
-
 def print_err(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
@@ -37,6 +36,62 @@ class RequestHandler(BaseHTTPRequestHandler):
     def return_error(self):
         self.send_response(500)
         self.end_headers()
+
+    def get_health_at_glance(self, common_labels, health_at_glance):            
+        if health_at_glance is not None:
+            for key, value in health_at_glance.items():
+                for status in value.items():
+                    if status[0] == 'status':
+                        gauge = 'hpilo_{}_gauge'.format(key)
+                        if status[1].upper() == 'OK':
+                            prometheus_metrics.gauges[gauge].labels(product_name=common_labels['product_name'],
+                                                                    server_name=common_labels['server_name']).set(0)
+                        elif status[1].upper() == 'DEGRADED':
+                            prometheus_metrics.gauges[gauge].labels(product_name=common_labels['product_name'],
+                                                                    server_name=common_labels['server_name']).set(1)
+                        else:
+                            prometheus_metrics.gauges[gauge].labels(pproduct_name=common_labels['product_name'],
+                                                                    server_name=common_labels['server_name']).set(2)
+    def get_detailed_disk_info(self, common_labels, storage):
+        for controller_label, controller_info in storage.items():
+            status = storage[controller_label]['status']
+            if status.upper() == 'OK':
+                prometheus_metrics.gauges['hpilo_hdd_controller_gauge'].labels(product_name=common_labels['product_name'],
+                                                        server_name=common_labels['server_name'], controller_label=controller_label).set(0)
+            elif status.upper() == 'DEGRADED':
+                prometheus_metrics.gauges['hpilo_hdd_controller_gauge'].labels(product_name=common_labels['product_name'],
+                                                        server_name=common_labels['server_name'], controller_label=controller_label).set(1)
+            else:
+                prometheus_metrics.gauges['hpilo_hdd_controller_gauge'].labels(pproduct_name=common_labels['product_name'],
+                                                        server_name=common_labels['server_name'], controller_label=controller_label).set(2)            
+
+            for logical_drive in storage[controller_label]['logical_drives']:
+                logical_drive_label = logical_drive['label']
+                logical_drive_status = logical_drive['status']
+                if logical_drive_status.upper() == 'OK':
+                    prometheus_metrics.gauges['hpilo_logical_drive_gauge'].labels(product_name=common_labels['product_name'],
+                                                            server_name=common_labels['server_name'], controller_label=controller_label, logical_drive_label=logical_drive_label).set(0)
+                elif logical_drive_status.upper() == 'DEGRADED':
+                    prometheus_metrics.gauges['hpilo_logical_drive_gauge'].labels(product_name=common_labels['product_name'],
+                                                            server_name=common_labels['server_name'], controller_label=controller_label, logical_drive_label=logical_drive_label).set(1)
+                else:
+                    prometheus_metrics.gauges['hpilo_logical_drive_gauge'].labels(pproduct_name=common_labels['product_name'],
+                                                            server_name=common_labels['server_name'], controller_label=controller_label, logical_drive_label=logical_drive_label).set(2)
+
+                for physical_drive in logical_drive['physical_drives']:
+                    physical_drive_location = physical_drive['location']
+                    physical_drive_label = physical_drive['label']
+                    physical_drive_status = physical_drive['status']
+                    if physical_drive_status.upper() == 'OK':
+                        prometheus_metrics.gauges['hpilo_physical_drive_gauge'].labels(product_name=common_labels['product_name'],
+                                                                server_name=common_labels['server_name'], controller_label=controller_label, logical_drive_label=logical_drive_label, physical_drive_label=physical_drive_label, location=physical_drive_location).set(0)
+                    elif physical_drive_status.upper() == 'DEGRADED':
+                        prometheus_metrics.gauges['hpilo_physical_drive_gauge'].labels(product_name=common_labels['product_name'],
+                                                                server_name=common_labels['server_name'], controller_label=controller_label, logical_drive_label=logical_drive_label, physical_drive_label=physical_drive_label, location=physical_drive_location).set(0)
+                    else:
+                        prometheus_metrics.gauges['hpilo_physical_drive_gauge'].labels(pproduct_name=common_labels['product_name'],
+                                                                server_name=common_labels['server_name'], controller_label=controller_label, logical_drive_label=logical_drive_label, physical_drive_label=physical_drive_label, location=physical_drive_location).set(0)
+
 
     def do_GET(self):
         """
@@ -66,6 +121,14 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.return_error()
             error_detected = True
 
+        return_summary = True
+        return_disks = True
+        if 'config' in query_components:
+            if 'no_summary' in query_components['config'][0]:
+                return_summary = False
+            if 'no_disks' in query_components['config'][0]:
+                return_disks = False
+
         if url.path == self.server.endpoint and ilo_host and ilo_user and ilo_password and ilo_port:
 
             ilo = None
@@ -84,36 +147,34 @@ class RequestHandler(BaseHTTPRequestHandler):
                 print(e)
 
             # get product and server name
+            common_labels = {}
             try:
-                product_name = ilo.get_product_name()
+                common_labels['product_name'] = ilo.get_product_name()
             except:
-                product_name = "Unknown HP Server"
+                common_labels['product_name'] = "Unknown HP Server"
 
             try:
-                server_name = ilo.get_server_name()
-                if server_name == "":
-                    server_name = ilo_host
+                common_labels['server_name'] = ilo.get_server_name()
+                if common_labels['server_name'] == "":
+                    common_labels['server_name'] = ilo_host
             except:
-                server_name = ilo_host
+                common_labels['server_name'] = ilo_host
 
             # get health
             embedded_health = ilo.get_embedded_health()
-            health_at_glance = embedded_health['health_at_a_glance']
-            
-            if health_at_glance is not None:
-                for key, value in health_at_glance.items():
-                    for status in value.items():
-                        if status[0] == 'status':
-                            gauge = 'hpilo_{}_gauge'.format(key)
-                            if status[1].upper() == 'OK':
-                                prometheus_metrics.gauges[gauge].labels(product_name=product_name,
-                                                                        server_name=server_name).set(0)
-                            elif status[1].upper() == 'DEGRADED':
-                                prometheus_metrics.gauges[gauge].labels(product_name=product_name,
-                                                                        server_name=server_name).set(1)
-                            else:
-                                prometheus_metrics.gauges[gauge].labels(product_name=product_name,
-                                                                        server_name=server_name).set(2)
+
+            if return_summary:
+                self.get_health_at_glance(common_labels, embedded_health['health_at_a_glance'])
+
+            if return_disks:
+                if embedded_health['storage'] == "null":
+                    # 'storage' is null if drives are in back of server rather than in the front plane.
+                    # Does not require AMS for disk information but AMS must be installed and running for 
+                    # SAS/SATA controller health information.
+                    print("Detailed disk information is unavailable.")
+                else:
+                    self.get_detailed_disk_info(common_labels, embedded_health['storage'])
+
             #for iLO3 patch network
             if ilo.get_fw_version()["management_processor"] == 'iLO3':
                 print_err('Unknown iLO nic status')
@@ -126,16 +187,16 @@ class RequestHandler(BaseHTTPRequestHandler):
                        value = 4
                        print_err('unrecognised nic status: {}'.format(nic['status']))
 
-                   prometheus_metrics.hpilo_nic_status_gauge.labels(product_name=product_name,
-                                                                    server_name=server_name,
+                   prometheus_metrics.hpilo_nic_status_gauge.labels(product_name=common_labels['product_name'],
+                                                                    server_name=common_labels['server_name'],
                                                                     nic_name=nic_name,
                                                                     ip_address=nic['ip_address']).set(value)
 
             # get firmware version
             fw_version = ilo.get_fw_version()["firmware_version"]
             # prometheus_metrics.hpilo_firmware_version.set(fw_version)
-            prometheus_metrics.hpilo_firmware_version.labels(product_name=product_name,
-                                                             server_name=server_name).set(fw_version)
+            prometheus_metrics.hpilo_firmware_version.labels(product_name=common_labels['product_name'],
+                                                            server_name=common_labels['server_name']).set(fw_version)
 
             # get the amount of time the request took
             REQUEST_TIME.observe(time.time() - start_time)

@@ -14,7 +14,6 @@ def main():
     parser.add_argument('--port', type=int, dest='port', default='9416', help='port to bind')
     parser.add_argument('--endpoint', type=str, dest='endpoint', default='/metrics',
                         help='endpoint where metrics will be published')
-
     args = parser.parse_args()
 
     exporter = ILOExporterServer(**vars(args))

@@ -12,7 +12,7 @@ Here are the status code of gauge
 ```
 
 
-### Output example
+### Health summary output example
 
 Example of status of your iLO
 ```
@@ -44,6 +44,38 @@ hpilo_temperature{product_name="ProLiant DL360 Gen9",server_name="name.fqdn.doma
 hpilo_vrm{product_name="ProLiant DL380 Gen6",server_name="name.fqdn.domain"} 0.0
 hpilo_drive{product_name="ProLiant DL380 Gen6",server_name="name.fqdn.domain"} 0.0
 hpilo_firmware_version{product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain"} 2.5
+```
+
+### Disk drive health output example
+
+Example of status of your iLO (shortened)
+```
+"storage": {
+  "Controller in Slot 2": {
+    "status": "OK",
+    "logical_drives": [
+      {
+        "status": "OK",
+        "label": "01",
+        "physical_drives": [
+          {
+            "status": "OK",
+            "label": "Port 2I Box 1 Bay 1",
+            "location": "Port 2I Box 1 Bay 1",
+          }
+        ]
+      }
+    ],
+    "label": "Controller in Slot 2"
+  }
+}
+```
+
+The returned output would be:
+```
+hpilo_hdd_controller_gauge{controller_label="Controller in Slot 2",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain"} 0.0
+hpilo_logical_drive_gauge{controller_label="Controller in Slot 2",logical_drive_label="01",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain"} 0.0
+hpilo_physical_drive_gauge{controller_label="Controller in Slot 2",location="Port 2I Box 1 Bay 1",logical_drive_label="01",physical_drive_label="Port 2I Box 1 Bay 1",product_name="ProLiant DL360 Gen9",server_name="name.fqdn.domain"} 0.0
 ```
 
 ### Installing
@@ -89,6 +121,11 @@ docker run -p 9416:9416 hpilo-exporter:latest
 You can then call the web server on the defined endpoint, `/metrics` by default.
 ```
 curl 'http://127.0.0.1:9416/metrics?ilo_host=127.0.0.1&ilo_port=443&ilo_user=admin&ilo_password=admin'
+```
+
+To not return disk drive health.
+```
+curl 'http://127.0.0.1:9416/metrics?ilo_host=127.0.0.1&ilo_port=443&ilo_user=admin&ilo_password=admin&config=no_disks'
 ```
 
 Passing argument to the docker run command
